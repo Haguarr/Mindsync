@@ -72,9 +72,15 @@ flutter:
     - assets/images/man2.jpg
     - assets/images/man3.jpg
     - assets/images/man4.jpg
+    - assets/images/activ1.png
+    - assets/images/activ2.png
+    - assets/images/activ3.png
+    - assets/images/activ4.png
+    - assets/images/activv4.png
     - assets/images/robot.png
     - assets/images/profile.png
     - assets/images/voice.png
+    - assets/images/health.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

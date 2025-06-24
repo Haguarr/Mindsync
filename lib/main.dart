@@ -12,6 +12,12 @@ import 'ChatScreen.dart';
 import 'VoiceAssistantScreen.dart';
 import 'TasksScreen.dart';
 import 'SessionScreen.dart';
+import 'ActiveTherapyScreen.dart';
+import 'ActiveFeedbackScreen.dart';
+import 'custom_side_menu.dart';
+import 'HealthyGuideScreen.dart';
+import 'AchievementsScreen.dart';
+import 'RewardsScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,6 +43,11 @@ class MyApp extends StatelessWidget {
           VoiceAssistantScreen.id: (context) => const VoiceAssistantScreen(),
           TasksScreen.id: (context) => const TasksScreen(),
           SessionScreen.id: (context) => const SessionScreen(),
+          ActiveTherapyScreen.id: (context) => const ActiveTherapyScreen(),
+          ActiveFeedbackScreen.id: (context) => const ActiveFeedbackScreen(),
+          HealthyGuideScreen.id: (context) => const HealthyGuideScreen(),
+          AchievementsScreen.id: (context) => const AchievementsScreen(),
+          RewardsScreen.id: (context) => const RewardsScreen(),
         }
     );
   }

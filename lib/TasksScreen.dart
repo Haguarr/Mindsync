@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
+import 'custom_side_menu.dart';// Make sure this path matches your file structure
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({Key? key}) : super(key: key);
@@ -17,9 +17,13 @@ class _TasksScreenState extends State<TasksScreen> {
     {"title": "Client Reporting & Documentation", "date": "Tomorrow 10:00 PM", "isChecked": false},
   ];
 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: const CustomSideMenu(),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -38,7 +42,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        Navigator.pop(context); // Navigate back
+                        _scaffoldKey.currentState?.openDrawer();
                       },
                       child: Container(
                         width: 40,
@@ -108,7 +112,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   ),
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/next'); // Navigate to next screen
+                      Navigator.pushNamed(context, '/next');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
@@ -123,7 +127,7 @@ class _TasksScreenState extends State<TasksScreen> {
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E1A4D), // Darker purple text
+                        color: Color(0xFF2E1A4D),
                       ),
                     ),
                   ),
@@ -193,29 +197,6 @@ class _TasksScreenState extends State<TasksScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: const TasksScreen(),
-    initialRoute: TasksScreen.id,
-    routes: {
-      TasksScreen.id: (context) => const TasksScreen(),
-      '/next': (context) => const NextScreen(), // Example next screen
-    },
-  ));
-}
-
-class NextScreen extends StatelessWidget {
-  const NextScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Next Screen")),
-      body: const Center(child: Text("Next Screen Content")),
     );
   }
 }
