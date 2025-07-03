@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 bool pass = true;
@@ -13,7 +12,7 @@ class Signup extends StatefulWidget {
   State<Signup> createState() => _SignupState();
 }
 
-class _SignupState extends State<Signup> {
+class _SignupState extends State<Signup> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -21,8 +20,35 @@ class _SignupState extends State<Signup> {
   final FocusNode _passwordFocus = FocusNode();
   String? _errorMessage;
   DateTime? _lastTap;
+  bool _isWorkspaceHovered = false;
+  bool _isLoginButtonHovered = false;
+  late AnimationController _controller;
+  late Animation<double> _buttonScaleAnimation;
+  late Animation<Color?> _buttonColorAnimation;
 
-  // Debounce tap events to prevent rapid interactions
+  @override
+  void initState() {
+    super.initState();
+    // Initialize animation controller for login button
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    // Scale animation for login button
+    _buttonScaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+
+    // Color animation for login button hover
+    _buttonColorAnimation = ColorTween(
+      begin: const Color(0xFF734F7C),
+      end: const Color(0xFF9B5BA6),
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
   void _handleTap(FocusNode focusNode) {
     final now = DateTime.now();
     if (_lastTap == null || now.difference(_lastTap!).inMilliseconds > 300) {
@@ -31,30 +57,30 @@ class _SignupState extends State<Signup> {
     }
   }
 
-  // Function to handle API login
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       try {
-        // Replace with your actual server IP or URL (localhost won't work on mobile)
-        final response = await http.post(
-          Uri.parse('http://your-server-ip:3000/login'), // Update this URL
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'email': _emailController.text.trim(),
-            'password': _passwordController.text,
-          }),
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
         );
-
-        if (response.statusCode == 200) {
-          // Successful login
-          Navigator.pushNamed(context, 'SplashScreen');
-        } else {
-          // Decode error message from response
-          final error = jsonDecode(response.body)['message'] ?? 'Unknown error';
-          setState(() {
-            _errorMessage = 'Login failed: $error';
-          });
-        }
+        Navigator.pushNamed(context, 'ProfileScreen');
+      } on FirebaseAuthException catch (e) {
+        setState(() {
+          switch (e.code) {
+            case 'user-not-found':
+              _errorMessage = 'No user found with this email.';
+              break;
+            case 'wrong-password':
+              _errorMessage = 'Incorrect password.';
+              break;
+            case 'invalid-email':
+              _errorMessage = 'Invalid email address.';
+              break;
+            default:
+              _errorMessage = 'Login failed: ${e.message}';
+          }
+        });
       } catch (e) {
         setState(() {
           _errorMessage = 'Error: $e';
@@ -71,24 +97,73 @@ class _SignupState extends State<Signup> {
           key: _formKey,
           child: Column(
             children: [
-              // Header with updated color
-              Container(
-                height: 250,
-                color: const Color(0xFF734F7C), // Replaced Colors.deepPurple
-                child: const Center(
-                  child: Text(
-                    "Login",
-                    style: TextStyle(
-                      fontSize: 50,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+              ClipPath(
+                clipper: BlobClipper(),
+                child: Container(
+                  height: 250,
+                  color: const Color(0xFF734F7C),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Login",
+                          style: TextStyle(
+                            fontSize: 50,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            fontFamily: 'Poppins',
+                            letterSpacing: 1.5,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black26,
+                                blurRadius: 10,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        MouseRegion(
+                          onEnter: (_) => setState(() => _isWorkspaceHovered = true),
+                          onExit: (_) => setState(() => _isWorkspaceHovered = false),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_circle,
+                                size: 20,
+                                color: _isWorkspaceHovered ? Colors.white : const Color(0xFFA272A9),
+                              ),
+                              const SizedBox(width: 10),
+                              TextButton(
+                                onPressed: () async {
+                                  final url = Uri.parse("https://www.gather.town/");
+                                  if (!await launchUrl(url)) {
+                                    setState(() {
+                                      _errorMessage = 'Could not launch $url';
+                                    });
+                                  }
+                                },
+                                child: Text(
+                                  "To MindSync's Workspace",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: _isWorkspaceHovered ? Colors.white : const Color(0xFFA272A9),
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Email TextField
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 child: TextFormField(
@@ -112,10 +187,7 @@ class _SignupState extends State<Signup> {
                   },
                 ),
               ),
-
               const SizedBox(height: 15),
-
-              // Password TextField
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 child: TextFormField(
@@ -141,17 +213,14 @@ class _SignupState extends State<Signup> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your password';
                     }
-                    if (value.length < 8) {
+                    if (value.length < 2) {
                       return 'Password must be at least 8 characters';
                     }
                     return null;
                   },
                 ),
               ),
-
               const SizedBox(height: 15),
-
-              // Error Message
               if (_errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -160,10 +229,7 @@ class _SignupState extends State<Signup> {
                     style: const TextStyle(color: Colors.red),
                   ),
                 ),
-
               const SizedBox(height: 15),
-
-              // Forgot Password Button
               Padding(
                 padding: const EdgeInsets.fromLTRB(250, 0, 0, 0),
                 child: TextButton(
@@ -171,7 +237,7 @@ class _SignupState extends State<Signup> {
                     Navigator.pushNamed(context, 'Forgot');
                   },
                   child: const Text(
-                    "Forgot my password",
+                    "Forgot password?",
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -180,70 +246,64 @@ class _SignupState extends State<Signup> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 15),
-
-              // Login Button with updated color
-              Container(
-                width: 250,
-                child: ElevatedButton(
-                  onPressed: _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF734F7C), // Replaced Colors.deepPurple
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                  ),
-                  child: const Text(
-                    "Login",
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+              MouseRegion(
+                onEnter: (_) {
+                  setState(() => _isLoginButtonHovered = true);
+                  _controller.forward();
+                },
+                onExit: (_) {
+                  setState(() => _isLoginButtonHovered = false);
+                  _controller.reverse();
+                },
+                child: GestureDetector(
+                  onTap: _login,
+                  child: ScaleTransition(
+                    scale: _buttonScaleAnimation,
+                    child: Container(
+                      width: 250,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            _buttonColorAnimation.value ?? const Color(0xFF734F7C),
+                            _isLoginButtonHovered ? const Color(0xFFA272A9) : const Color(0xFF734F7C),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Login",
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontFamily: 'Poppins',
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-
               const SizedBox(height: 15),
-
-              // Link to MindSync's Workspace with updated colors (moved here)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.add_circle,
-                    size: 20,
-                    color: Color(0xFF734F7C), // Replaced Colors.deepPurple
-                  ),
-                  const SizedBox(width: 10),
-                  TextButton(
-                    onPressed: () async {
-                      final url = Uri.parse("https://www.gather.town/");
-                      if (!await launchUrl(
-                        url,
-                        mode: LaunchMode.platformDefault,
-                      )) {
-                        setState(() {
-                          _errorMessage = 'Could not launch $url';
-                        });
-                      }
-                    },
-                    child: const Text(
-                      "To MindSync's Workspace",
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFA272A9), // Replaced Colors.deepPurpleAccent
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              // Signup link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -259,12 +319,13 @@ class _SignupState extends State<Signup> {
                     onPressed: () {
                       Navigator.pushNamed(context, 'LoginScreen');
                     },
-                    child: const Text(
+                    child: Text(
                       "Sign me up",
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        fontWeight: FontWeight.w600,
+                        color: _isLoginButtonHovered ? const Color(0xFFA272A9) : const Color(0xFF734F7C),
+                        fontFamily: 'Poppins',
                       ),
                     ),
                   ),
@@ -283,18 +344,20 @@ class _SignupState extends State<Signup> {
     _passwordController.dispose();
     _emailFocus.dispose();
     _passwordFocus.dispose();
+    _controller.dispose();
     super.dispose();
   }
 }
 
-// BlobClipper
 class BlobClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     Path path = Path();
-    path.lineTo(0, size.height * 0.7);
-    path.quadraticBezierTo(size.width * 0.25, size.height, size.width * 0.5, size.height * 0.8);
-    path.quadraticBezierTo(size.width * 0.75, size.height * 0.6, size.width, size.height * 0.8);
+    path.lineTo(0, size.height * 0.85); // Increased height for bigger upward curve
+    path.quadraticBezierTo(
+        size.width * 0.25, size.height * 1.1, size.width * 0.5, size.height * 0.95); // Adjusted for larger upward curve
+    path.quadraticBezierTo(
+        size.width * 0.75, size.height * 0.7, size.width, size.height * 0.95); // Adjusted for larger upward curve
     path.lineTo(size.width, 0);
     path.close();
     return path;

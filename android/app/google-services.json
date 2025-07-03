@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "618942015131",
+    "project_id": "mindsync-9ba05",
+    "storage_bucket": "mindsync-9ba05.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:618942015131:android:e8e57da3104c99c8a3083e",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "618942015131-61c15cibvc5260818nlv9grp00lupje3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8TZFNH2nzPTrn_iuWlNn0blzBlJo1slA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "618942015131-61c15cibvc5260818nlv9grp00lupje3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
